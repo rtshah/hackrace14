@@ -20,6 +20,7 @@ function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer  ${process.env.REACT_APP_OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'gpt-4',
@@ -59,10 +60,9 @@ function Home() {
       };
   
       recognition.onresult = (event) => {
-        // Check if there are results and access them safely
         if (event.results && event.results[0] && event.results[0][0]) {
           const speechToText = event.results[0][0].transcript;
-          setTranscript(speechToText); // Update the state
+          setTranscript(speechToText);
           console.log('Transcript: ', speechToText);
         }
       };
@@ -75,7 +75,6 @@ function Home() {
         setIsRecording(false);
         console.log('Recording stopped');
         
-        // Check if there are results before trying to access them
         if (event.results && event.results[0] && event.results[0][0]) {
           const finalTranscript = event.results[0][0].transcript;
           await getSummary(finalTranscript); // Pass final transcript to getSummary
