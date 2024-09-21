@@ -20,7 +20,7 @@ function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer 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`, // Replace with your OpenAI API key
+          'Authorization': `Bearer aa`, // Replace with your OpenAI API key
         },
         body: JSON.stringify({
           model: 'gpt-4',
