@@ -9,6 +9,8 @@ import { collection, onSnapshot, addDoc } from 'firebase/firestore';
 import { Menu, X, Download } from 'lucide-react'
 import styled from 'styled-components'
 import { FaMicrophone } from 'react-icons/fa'
+import { Link } from 'react-router-dom';
+
 
 const HomeContainer = styled.div`
   min-height: 100vh;
@@ -19,7 +21,14 @@ const HomeContainer = styled.div`
   align-items: center;
   padding: 20px;
 `
+const StyledLink = styled(Link)`
+  color: inherit;  /* Inherit the color from the parent NavLink */
+  text-decoration: none;
 
+  &:visited {
+    color: inherit;  /* Prevent visited links from changing color */
+  }
+`;
 const Header = styled.header`
   background-color: #2d3748;
   width: 100%;
@@ -96,7 +105,27 @@ const DownloadButton = styled.button`
     background-color: #2c5282;
   }
 `
+const RefreshButton = styled.button`
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+  margin-top: 25px;
 
+  &:hover {
+    background-color: #2c5282;
+  }
+
+  svg {
+    margin-right: 8px;
+  }
+`;
 const SidebarToggle = styled.button`
   background: none;
   border: none;
@@ -282,9 +311,9 @@ function Home() {
           <h3>Summary:</h3>
           <p>{summary || 'No summary available'}</p>
         </TextBox>
-        <DownloadButton onClick={generateCSV}>
-          Download CSV
-        </DownloadButton>
+        <RefreshButton>
+          <StyledLink to="/Transcripts">Transcript History</StyledLink>
+        </RefreshButton>
       </MainBox>
     </HomeContainer>
   );

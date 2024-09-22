@@ -169,7 +169,7 @@ export default function SummaryList() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [isDownloading, setIsDownloading] = useState(false); // New state for download
+  const [isDownloading, setIsDownloading] = useState(false);
   const fetchSummaries = async (date: Date) => {
     setIsLoading(true);
     setError(null);
@@ -339,7 +339,18 @@ export default function SummaryList() {
       setIsDownloading(false); // Reset loading state
     }
   };
+  const boxStyle = {
+    flex: 1,
 
+    padding: '1px',
+    margin: '5px',
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    backgroundColor: '#4a5568', 
+    color: 'white',
+    textAlign: 'center',
+  };
+  
   return (
     <PageContainer>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -372,6 +383,19 @@ export default function SummaryList() {
 
           </DownloadButton>
         </ButtonContainer>
+        <SummaryBox>
+  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+    <div style={boxStyle}>
+      <p>1{')'} Patient</p>
+    </div>
+    <div style={boxStyle}>
+      <p>2{')'}  Healthcare Worker</p>
+    </div>
+    <div style={boxStyle}>
+      <p>3{')'}  Action</p>
+    </div>
+  </div>
+</SummaryBox>
         {isLoading ? (
           <LoadingMessage>Loading summaries...</LoadingMessage>
         ) : error ? (
