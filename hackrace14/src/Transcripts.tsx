@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Menu, RefreshCw, X, Edit2, Check, Download, Loader } from 'lucide-react';
 import Sidebar from './Sidebar.tsx';
+import DateSelector from './DateSelector.tsx';
 import OpenAI from "openai";
-
 const PageContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(to bottom right, #1a202c, #2d3748);
@@ -168,13 +168,14 @@ export default function SummaryList() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [isDownloading, setIsDownloading] = useState(false); // New state for download
-
-  const fetchSummaries = async () => {
+  const fetchSummaries = async (date: Date) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:5000/api/documents');
+      const formattedDate = formatDateToUTC(date);
+      const response = await fetch(`http://localhost:5000/api/documents/${formattedDate}`);
       if (!response.ok) {
         throw new Error('Failed to fetch summaries');
       }
@@ -187,11 +188,19 @@ export default function SummaryList() {
       setIsLoading(false);
     }
   };
-
+  const formatDateToUTC = (date: Date): string => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   useEffect(() => {
-    fetchSummaries();
-  }, []);
+    fetchSummaries(currentDate);
+  }, [currentDate]);
 
+  const handleDateChange = (newDate: Date) => {
+    setCurrentDate(newDate);
+  };
   const deleteSummary = async (id: string) => {
     try {
       const response = await fetch(`http://localhost:5000/api/summary/${id}`, {
@@ -339,10 +348,12 @@ export default function SummaryList() {
       </Header>
       <MainContent>
         <ButtonContainer>
+          
           <RefreshButton onClick={fetchSummaries}>
             <RefreshCw size={18} />
             Refresh Summaries
           </RefreshButton>
+          <DateSelector currentDate={currentDate} onDateChange={handleDateChange} />
           <DownloadButton onClick={downloadCSV} disabled={isDownloading}>
             {isDownloading ? (
               <>

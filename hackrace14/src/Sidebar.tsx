@@ -127,13 +127,13 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <StyledLink to="/">Home</StyledLink>
               </NavLink>
             </NavItem>
-            <NavItem>
+            {/* <NavItem>
               <NavLink href="#allergy">
                 <Calendar size={20} />
                 <StyledLink to="/Transcripts">Change Date</StyledLink>
 
               </NavLink>
-            </NavItem>
+            </NavItem> */}
             <NavItem>
               <NavLink href="#air">
                 <List size={20} />

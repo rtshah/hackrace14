@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import DateSelector from './DateSelector.tsx';
+
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import Sidebar from './Sidebar.tsx';
@@ -112,9 +114,18 @@ function Home() {
   const [summary, setSummary] = useState('');
   const [summaries, setSummaries] = useState([]);
   const [colors, setColors] = useState([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const recognitionRef = useRef(null);
-
+  const formatDateToUTC = (date: Date): string => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const handleDateChange = (newDate: Date) => {
+    setCurrentDate(newDate);
+  };
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "colors"), (snapshot) => {
       const colorsArray = snapshot.docs.map((doc) => ({
@@ -142,7 +153,8 @@ function Home() {
 
   const getSummary = async (text) => {
     try {
-      const response = await fetch('http://localhost:5000/api/summarize', {
+      const formattedDate = formatDateToUTC(currentDate);
+      const response = await fetch(`http://localhost:5000/api/summarize/${formattedDate}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +266,10 @@ function Home() {
         <HeaderTitle>Welcome</HeaderTitle>
         <div style={{ width: '24px' }} /> {/* Placeholder for symmetry */}
       </Header>
+
       <MainBox>
+      <DateSelector currentDate={currentDate} onDateChange={handleDateChange} />
+
         <h2>{isRecording ? 'Recording...' : 'Start Recording'}</h2>
         <Button isRecording={isRecording} onClick={toggleRecording}>
           <FaMicrophone />

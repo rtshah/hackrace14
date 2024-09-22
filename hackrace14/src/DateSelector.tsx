@@ -37,18 +37,25 @@ interface DateSelectorProps {
 const DateSelector: React.FC<DateSelectorProps> = ({ currentDate, onDateChange }) => {
   const changeDate = (days: number) => {
     const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + days);
-    onDateChange(newDate);
+    newDate.setUTCDate(newDate.getUTCDate() + days);
+        onDateChange(newDate);
   };
-
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric',
+      timeZone: 'UTC'
+    });
+  };
   return (
     <DateSelectorContainer>
       <DateButton onClick={() => changeDate(-1)}>
         <ChevronLeft size={24} />
       </DateButton>
       <DateDisplay>
-        {currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-      </DateDisplay>
+      {formatDate(currentDate)}
+            </DateDisplay>
       <DateButton onClick={() => changeDate(1)}>
         <ChevronRight size={24} />
       </DateButton>
