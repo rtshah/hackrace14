@@ -16,10 +16,14 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-app.post('/api/summarize', async (req, res) => {
-  const { text } = req.body;
-
+app.post('/api/summarize/:date', async (req, res) => {
   try {
+    const { text } = req.body;
+    const dateString = req.params.date; // Format: YYYY-MM-DD
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day+1));
+    const collectionName = getCollectionName(date);
+    
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
@@ -36,12 +40,22 @@ app.post('/api/summarize', async (req, res) => {
       temperature: 0.7,
     });
 
-    res.json({ summary: completion.choices[0].message.content.trim() });
+    const summary = completion.choices[0].message.content.trim();
+
+    // Store the summary in Firestore
+    await adminDb.collection(collectionName).add({
+      summary,
+    });
+
+    // Send the response after storing in Firestore
+    res.json({ summary });
+    
   } catch (error) {
     console.error('Error with OpenAI API:', error);
     res.status(500).json({ error: 'Error generating summary.' });
   }
 });
+
 
 const csvWriter = createObjectCsvWriter({
   path: './summaries.csv', // Path to save CSV
@@ -103,11 +117,21 @@ app.get('/generate-csv', async (req, res) => {
     res.status(500).send('An error occurred while generating the CSV.');
   }
 });
-
+function getCollectionName(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `summaries_${year}_${month}_${day}`;
+}
 app.get('/api/documents/:date', async (req, res) => {
   try {
-    const date = req.params.date; // Format: YYYY-MM-DD
-    const collectionName = `summaries_${date.replace(/-/g, '_')}`;
+    const dateString = req.params.date; // Format: YYYY-MM-DD
+    const [year, month, day] = dateString.split('-').map(Number);
+    
+    // Create a Date object in UTC
+    const date = new Date(Date.UTC(year, month -1, day+1));
+    
+    const collectionName = getCollectionName(date);
     
     const snapshot = await adminDb.collection(collectionName).get();
     
