@@ -112,8 +112,11 @@ app.get('/api/documents', async (req, res) => {
       return res.status(404).json({ message: 'No documents found' });
     }
 
-    // Extract only the 'summary' field from each document
-    const summaries = snapshot.docs.map(doc => doc.data().summary);
+    // Extract both the 'id' and 'summary' field from each document
+    const summaries = snapshot.docs.map(doc => ({
+      id: doc.id,
+      summary: doc.data().summary
+    }));
 
     return res.status(200).json(summaries);
   } catch (error) {
@@ -123,6 +126,24 @@ app.get('/api/documents', async (req, res) => {
 });
 
 
+// DELETE endpoint to delete a summary by document ID
+app.delete('/api/summary/:id', async (req, res) => {
+  const summaryId = req.params.id;
+  try {
+    const docRef = adminDb.collection('summaries').doc(summaryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Summary not found' });
+    }
+
+    await docRef.delete();
+    return res.status(200).json({ message: `Summary with ID ${summaryId} has been deleted.` });
+  } catch (error) {
+    console.error('Error deleting summary:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 

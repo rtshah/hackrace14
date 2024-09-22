@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Menu, RefreshCw } from 'lucide-react';
+import { Menu, RefreshCw, X } from 'lucide-react';
 import Sidebar from './Sidebar.tsx';
 
 const PageContainer = styled.div`
@@ -56,9 +56,25 @@ const SummaryBox = styled.div`
   width: 100%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease-in-out;
+  position: relative;
 
   &:hover {
     transform: translateY(-5px);
+  }
+`;
+
+const DeleteButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #fc8181;
   }
 `;
 
@@ -94,17 +110,23 @@ const ErrorMessage = styled.p`
   color: #fc8181;
 `;
 
-export default function Transcripts() {
-  const [summaries, setSummaries] = useState<string[]>([]);
+interface Summary {
+  id: string;
+  summary: string;
+}
+
+export default function SummaryList() {
+  const [summaries, setSummaries] = useState<Summary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
   const fetchSummaries = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/documents');
+      const response = await fetch('http://localhost:5000/api/documents');
       if (!response.ok) {
         throw new Error('Failed to fetch summaries');
       }
@@ -122,6 +144,23 @@ export default function Transcripts() {
     fetchSummaries();
   }, []);
 
+  const deleteSummary = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/summary/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete summary');
+      }
+
+      setSummaries(summaries.filter(summary => summary.id !== id));
+    } catch (err) {
+      setError('An error occurred while deleting the summary. Please try again.');
+      console.error('Error deleting summary:', err);
+    }
+  };
+
   return (
     <PageContainer>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -129,13 +168,13 @@ export default function Transcripts() {
         <SidebarToggle onClick={() => setSidebarOpen(!sidebarOpen)}>
           <Menu />
         </SidebarToggle>
-        <HeaderTitle>Todays Actions</HeaderTitle>
+        <HeaderTitle>Summary List</HeaderTitle>
         <div style={{ width: '24px' }} /> {/* Placeholder for symmetry */}
       </Header>
       <MainContent>
         <RefreshButton onClick={fetchSummaries}>
           <RefreshCw size={18} />
-          Refresh Actions
+          Refresh Summaries
         </RefreshButton>
         {isLoading ? (
           <LoadingMessage>Loading summaries...</LoadingMessage>
@@ -144,9 +183,12 @@ export default function Transcripts() {
         ) : summaries.length === 0 ? (
           <LoadingMessage>No summaries found.</LoadingMessage>
         ) : (
-          summaries.map((summary, index) => (
-            <SummaryBox key={index}>
-              <p>{summary}</p>
+          summaries.map((summary) => (
+            <SummaryBox key={summary.id}>
+              <DeleteButton onClick={() => deleteSummary(summary.id)}>
+                <X size={18} />
+              </DeleteButton>
+              <p>{summary.summary}</p>
             </SummaryBox>
           ))
         )}

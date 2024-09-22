@@ -26,6 +26,7 @@ const SidebarHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 20px;
+  margin-top:100px
   background-color: #2c2f33;
 `;
 
@@ -113,9 +114,9 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
         <SidebarNav>
           <NavList>
             <NavItem>
-              <NavLink href="#home">
+              <NavLink >
                 <Home size={20} />
-                Home
+                <Link to="/">Home</Link>
               </NavLink>
             </NavItem>
             <NavItem>
