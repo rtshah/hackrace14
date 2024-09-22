@@ -104,15 +104,17 @@ app.get('/generate-csv', async (req, res) => {
   }
 });
 
-app.get('/api/documents', async (req, res) => {
+app.get('/api/documents/:date', async (req, res) => {
   try {
-    const snapshot = await adminDb.collection('summaries').get();
+    const date = req.params.date; // Format: YYYY-MM-DD
+    const collectionName = `summaries_${date.replace(/-/g, '_')}`;
+    
+    const snapshot = await adminDb.collection(collectionName).get();
     
     if (snapshot.empty) {
-      return res.status(404).json({ message: 'No documents found' });
+      return res.status(404).json({ message: 'No documents found for this date' });
     }
 
-    // Extract both the 'id' and 'summary' field from each document
     const summaries = snapshot.docs.map(doc => ({
       id: doc.id,
       summary: doc.data().summary
