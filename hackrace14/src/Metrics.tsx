@@ -52,6 +52,21 @@ const SidebarToggle = styled.button`
   cursor: pointer;
 `;
 
+const RecommendationBox = styled.div`
+  background-color: #2d3748;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+`;
+
+const RecommendationItem = styled.div`
+  margin-bottom: 15px;
+  color: #cbd5e0;
+`;
+
 function Metrics() {
   const [sidebarOpen, setSidebarOpen] = useState(false); 
   const data = {
@@ -89,6 +104,19 @@ function Metrics() {
     },
   };
 
+  const recommendations = [
+    {
+      hall: 'Hall 1',
+      nurse: 'Nurse A',
+      patients: ['Patient B', 'Patient D'], // Higher need patients
+    },
+    {
+      hall: 'Hall 2',
+      nurse: 'Nurse B',
+      patients: ['Patient A', 'Patient C', 'Patient E'], // Lower to moderate need patients
+    },
+  ];
+
   return (
     <MetricsContainer>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -105,6 +133,14 @@ function Metrics() {
         <h2>Patient Need Levels</h2>
         <p>Here is a chart representing patient need levels on a scale of 1 to 10:</p>
         <Bar data={data} options={options} />
+        <RecommendationBox>
+          <h3>Nurse Allocation Recommendations</h3>
+          {recommendations.map((rec, index) => (
+            <RecommendationItem key={index}>
+              <strong>{rec.hall}:</strong> {rec.nurse} should be assigned to patients {rec.patients.join(', ')}.
+            </RecommendationItem>
+          ))}
+        </RecommendationBox>
       </MainContent>
     </MetricsContainer>
   );
