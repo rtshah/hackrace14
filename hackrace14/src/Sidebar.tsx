@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { X, Home, Cloud, Wind, Sun, Calendar,List } from 'lucide-react';
+import { X, Home, Cloud, Wind, Sun, Calendar,List, BarChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface SidebarContainerProps {
@@ -143,7 +143,7 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
             </NavItem>
             <NavItem>
               <NavLink href="#metrics">
-                <List size={20} />
+                <BarChart size={20} />
                 <StyledLink to="/metrics">Metrics</StyledLink>
               </NavLink>
             </NavItem>

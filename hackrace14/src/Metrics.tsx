@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import Sidebar from './Sidebar.tsx'; // Import Sidebar component
 import { Menu } from 'lucide-react'; // Import icon for sidebar toggle
+import { Bar } from 'react-chartjs-2';
+import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const MetricsContainer = styled.div`
   min-height: 100vh;
@@ -50,11 +53,44 @@ const SidebarToggle = styled.button`
 `;
 
 function Metrics() {
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false); 
+  const data = {
+    labels: ['Patient A', 'Patient B', 'Patient C', 'Patient D', 'Patient E'],
+    datasets: [
+      {
+        label: 'Need Level (1-10)',
+        data: [3, 7, 5, 8, 6], // Fake need levels
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Need Level',
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Patients',
+        },
+      },
+    },
+  };
 
   return (
     <MetricsContainer>
-      {/* Include Sidebar component */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <Header>
@@ -66,8 +102,9 @@ function Metrics() {
       </Header>
 
       <MainContent>
-        <h2>Metrics Page</h2>
-        <p>Here you can display various metrics...</p>
+        <h2>Patient Need Levels</h2>
+        <p>Here is a chart representing patient need levels on a scale of 1 to 10:</p>
+        <Bar data={data} options={options} />
       </MainContent>
     </MetricsContainer>
   );

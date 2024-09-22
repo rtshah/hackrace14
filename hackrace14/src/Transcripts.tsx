@@ -286,7 +286,7 @@ export default function SummaryList() {
     try {
       // First request to OpenAI for the initial CSV generation
       const firstCompletion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: openaiPrompt },
