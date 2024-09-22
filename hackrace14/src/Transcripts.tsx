@@ -203,20 +203,22 @@ export default function SummaryList() {
   };
   const deleteSummary = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/summary/${id}`, {
+      const formattedDate = formatDateToUTC(currentDate);
+      const response = await fetch(`http://localhost:5000/api/summary/${formattedDate}/${id}`, {
         method: 'DELETE',
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to delete summary');
       }
-
+  
       setSummaries(summaries.filter(summary => summary.id !== id));
     } catch (err) {
       setError('An error occurred while deleting the summary. Please try again.');
       console.error('Error deleting summary:', err);
     }
   };
+  
 
   const startEditing = (id: string, content: string) => {
     setEditingId(id);
@@ -230,18 +232,19 @@ export default function SummaryList() {
 
   const saveEdit = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/summary/${id}`, {
+      const formattedDate = formatDateToUTC(currentDate);
+      const response = await fetch(`http://localhost:5000/api/summary/${formattedDate}/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ summary: editContent }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to update summary');
       }
-
+  
       setSummaries(summaries.map(summary => 
         summary.id === id ? { ...summary, summary: editContent } : summary
       ));
@@ -252,6 +255,7 @@ export default function SummaryList() {
       console.error('Error updating summary:', err);
     }
   };
+  
 
   const openai = new OpenAI({
     apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -349,10 +353,11 @@ export default function SummaryList() {
       <MainContent>
         <ButtonContainer>
           
-          <RefreshButton onClick={fetchSummaries}>
-            <RefreshCw size={18} />
-            Refresh Summaries
-          </RefreshButton>
+        <RefreshButton onClick={() => fetchSummaries(currentDate)}>
+  <RefreshCw size={18} />
+  Refresh Summaries
+</RefreshButton>
+
           <DateSelector currentDate={currentDate} onDateChange={handleDateChange} />
           <DownloadButton onClick={downloadCSV} disabled={isDownloading}>
             {isDownloading ? (
