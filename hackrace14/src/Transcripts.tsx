@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Menu, RefreshCw, X, Edit2, Check, Download } from 'lucide-react';
 import Sidebar from './Sidebar.tsx';
+import OpenAI from "openai";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -242,34 +243,61 @@ export default function SummaryList() {
     }
   };
 
-  const downloadCSV = () => {
-    // Create the CSV header
-    let csvContent = 'data:text/csv;charset=utf-8,Patient,Nurses,Actions\n';
+  const openai = new OpenAI({
+    apiKey: process.env.REACT_APP_OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true 
+  });
+
+  const downloadCSV = async () => {
+    // Check if API key is present
+    if (!process.env.REACT_APP_OPENAI_API_KEY) {
+      console.error('API key is missing!');
+      return;
+    }
   
-    // Process each summary and extract relevant data
-    summaries.forEach(summary => {
-      // Match the "1)", "2)", and "3)" pattern using a regular expression
-      const match = summary.summary.match(/1\)([^2]*)2\)([^3]*)3\)(.*)/s);
+    // Prepare summaries as a text block to be processed by OpenAI
+    const summaryTexts = summaries.map(summary => summary.summary).join("\n\n");
   
-      if (match) {
-        const patient = match[1].trim().replace(/\n/g, ' '); // Clean up newlines in "Patient" section
-        const nurses = match[2].trim().replace(/\n/g, ' ');  // Clean up newlines in "Nurses" section
-        const actions = match[3].trim().replace(/\n/g, ' '); // Clean up newlines in "Actions" section
+    const openaiPrompt = `
+      You are given a set of summaries in the format: "1)... 2)... 3)...".
+      1) Refers to patient information, 2) Refers to nurses, and 3) Refers to actions.
+
+      Ignore summaries that don't contain a specific patient (for example, "1) undetermined" should be ignored).
   
-        // Append the row to CSV content
-        csvContent += `"${patient}","${nurses}","${actions}"\n`;
-      }
-    });
+      Here are the summaries:
+      ${summaryTexts}
   
-    // Encode the CSV content and trigger download
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'summaries.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };  
+      Return the results in CSV format with columns "Patient", "Nurses", "Actions".
+      Do not return any other text. Only return the CSV data.
+      If there are multiple nurses, separate them with / (forward slash).
+    `;
+  
+    try {
+      // Make the request to the OpenAI API
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", 
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: openaiPrompt },
+        ],
+      });
+  
+      // Get the CSV text from the response
+      const csvData = completion.choices[0].message.content.trim();
+  
+      // Prepare the CSV file for download
+      const csvContent = 'data:text/csv;charset=utf-8,' + csvData;
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'summaries.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error generating CSV with OpenAI API:', error);
+    }
+  };
 
   return (
     <PageContainer>
