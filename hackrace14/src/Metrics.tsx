@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
+import Sidebar from './Sidebar.tsx'; // Import Sidebar component
+import { Menu } from 'lucide-react'; // Import icon for sidebar toggle
 
 const MetricsContainer = styled.div`
   min-height: 100vh;
@@ -39,12 +41,30 @@ const MainContent = styled.main`
   align-items: center;
 `;
 
+const SidebarToggle = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+`;
+
 function Metrics() {
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Sidebar state
+
   return (
     <MetricsContainer>
+      {/* Include Sidebar component */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
       <Header>
+        <SidebarToggle onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <Menu />
+        </SidebarToggle>
         <HeaderTitle>Metrics</HeaderTitle>
+        <div style={{ width: '24px' }} /> {/* Placeholder for symmetry */}
       </Header>
+
       <MainContent>
         <h2>Metrics Page</h2>
         <p>Here you can display various metrics...</p>
