@@ -5,8 +5,9 @@ require('dotenv').config();
 const { createObjectCsvWriter } = require('csv-writer');
 const fs = require('fs');
 const path = require('path');
-const adminDb = require('./src/firebase-admin');
-
+const admin = require('firebase-admin');
+const adminDb = require('./src/firebase-admin'); // Ensure this initializes Firestore correctly
+const { FieldValue } = require('firebase-admin').firestore; // Correctly import FieldValue
 
 const app = express();
 app.use(express.json());
@@ -16,14 +17,21 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// POST endpoint to create a summary for a specific date
 app.post('/api/summarize/:date', async (req, res) => {
   try {
     const { text } = req.body;
     const dateString = req.params.date; // Format: YYYY-MM-DD
+
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+    }
+
     const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day+1));
+    const date = new Date(Date.UTC(year, month - 1, day+1)); // Correct date handling
     const collectionName = getCollectionName(date);
-    
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
@@ -45,17 +53,17 @@ app.post('/api/summarize/:date', async (req, res) => {
     // Store the summary in Firestore
     await adminDb.collection(collectionName).add({
       summary,
+      timestamp: FieldValue.serverTimestamp()
     });
 
     // Send the response after storing in Firestore
-    res.json({ summary });
+    res.status(201).json({ summary });
     
   } catch (error) {
     console.error('Error with OpenAI API:', error);
     res.status(500).json({ error: 'Error generating summary.' });
   }
 });
-
 
 const csvWriter = createObjectCsvWriter({
   path: './summaries.csv', // Path to save CSV
@@ -117,19 +125,28 @@ app.get('/generate-csv', async (req, res) => {
     res.status(500).send('An error occurred while generating the CSV.');
   }
 });
+
+// Helper function to generate collection name based on date
 function getCollectionName(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `summaries_${year}_${month}_${day}`;
 }
+
+// GET endpoint to fetch summaries for a specific date
 app.get('/api/documents/:date', async (req, res) => {
   try {
     const dateString = req.params.date; // Format: YYYY-MM-DD
     const [year, month, day] = dateString.split('-').map(Number);
     
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
+    }
+
     // Create a Date object in UTC
-    const date = new Date(Date.UTC(year, month -1, day+1));
+    const date = new Date(Date.UTC(year, month -1, day+1)); // Correct date handling
     
     const collectionName = getCollectionName(date);
     
@@ -152,11 +169,20 @@ app.get('/api/documents/:date', async (req, res) => {
 });
 
 
-// DELETE endpoint to delete a summary by document ID
-app.delete('/api/summary/:id', async (req, res) => {
-  const summaryId = req.params.id;
+// DELETE endpoint to delete a summary by date and document ID
+app.delete('/api/summary/:date/:id', async (req, res) => {
+  const { date, id } = req.params;
   try {
-    const docRef = adminDb.collection('summaries').doc(summaryId);
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
+    }
+
+    const [year, month, day] = date.split('-').map(Number);
+    const dateObj = new Date(Date.UTC(year, month - 1, day+1));
+    const collectionName = getCollectionName(dateObj);
+
+    const docRef = adminDb.collection(collectionName).doc(id);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -164,15 +190,16 @@ app.delete('/api/summary/:id', async (req, res) => {
     }
 
     await docRef.delete();
-    return res.status(200).json({ message: `Summary with ID ${summaryId} has been deleted.` });
+    return res.status(200).json({ message: `Summary with ID ${id} has been deleted.` });
   } catch (error) {
     console.error('Error deleting summary:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
-app.put('/api/summary/:id', async (req, res) => {
-  const summaryId = req.params.id;
+// PUT endpoint to update a summary by date and document ID
+app.put('/api/summary/:date/:id', async (req, res) => {
+  const { date, id } = req.params;
   const { summary } = req.body;
 
   if (!summary) {
@@ -180,7 +207,16 @@ app.put('/api/summary/:id', async (req, res) => {
   }
 
   try {
-    const docRef = adminDb.collection('summaries').doc(summaryId);
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
+    }
+
+    const [year, month, day] = date.split('-').map(Number);
+    const dateObj = new Date(Date.UTC(year, month - 1, day+1));
+    const collectionName = getCollectionName(dateObj);
+
+    const docRef = adminDb.collection(collectionName).doc(id);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -188,7 +224,7 @@ app.put('/api/summary/:id', async (req, res) => {
     }
 
     await docRef.update({ summary });
-    return res.status(200).json({ message: `Summary with ID ${summaryId} has been updated.` });
+    return res.status(200).json({ message: `Summary with ID ${id} has been updated.` });
   } catch (error) {
     console.error('Error updating summary:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
