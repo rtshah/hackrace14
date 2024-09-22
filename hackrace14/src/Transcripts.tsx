@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Menu, RefreshCw, X } from 'lucide-react';
+import { Menu, RefreshCw, X, Edit2, Check } from 'lucide-react';
 import Sidebar from './Sidebar.tsx';
 
 const PageContainer = styled.div`
@@ -53,7 +53,7 @@ const SummaryBox = styled.div`
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
-  width: 100%;
+  width: 90%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease-in-out;
   position: relative;
@@ -63,19 +63,24 @@ const SummaryBox = styled.div`
   }
 `;
 
-const DeleteButton = styled.button`
-  position: absolute;
-  top: 10px;
-  right: 10px;
+const ActionButton = styled.button`
   background: none;
   border: none;
   color: #a0aec0;
   cursor: pointer;
   transition: color 0.2s ease;
+  margin-left: 10px;
 
   &:hover {
-    color: #fc8181;
+    color: #fff;
   }
+`;
+
+const ButtonGroup = styled.div`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
 `;
 
 const RefreshButton = styled.button`
@@ -110,6 +115,19 @@ const ErrorMessage = styled.p`
   color: #fc8181;
 `;
 
+const EditInput = styled.textarea`
+  width: 100%;
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 10px;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+`;
+
 interface Summary {
   id: string;
   summary: string;
@@ -120,7 +138,8 @@ export default function SummaryList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
   const fetchSummaries = async () => {
     setIsLoading(true);
@@ -161,6 +180,41 @@ export default function SummaryList() {
     }
   };
 
+  const startEditing = (id: string, content: string) => {
+    setEditingId(id);
+    setEditContent(content);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditContent('');
+  };
+
+  const saveEdit = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/summary/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ summary: editContent }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update summary');
+      }
+
+      setSummaries(summaries.map(summary => 
+        summary.id === id ? { ...summary, summary: editContent } : summary
+      ));
+      setEditingId(null);
+      setEditContent('');
+    } catch (err) {
+      setError('An error occurred while updating the summary. Please try again.');
+      console.error('Error updating summary:', err);
+    }
+  };
+
   return (
     <PageContainer>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -169,7 +223,7 @@ export default function SummaryList() {
           <Menu />
         </SidebarToggle>
         <HeaderTitle>Summary List</HeaderTitle>
-        <div style={{ width: '24px' }} /> {/* Placeholder for symmetry */}
+        <div style={{ width: '24px' }} />
       </Header>
       <MainContent>
         <RefreshButton onClick={fetchSummaries}>
@@ -185,10 +239,35 @@ export default function SummaryList() {
         ) : (
           summaries.map((summary) => (
             <SummaryBox key={summary.id}>
-              <DeleteButton onClick={() => deleteSummary(summary.id)}>
-                <X size={18} />
-              </DeleteButton>
-              <p>{summary.summary}</p>
+              <ButtonGroup>
+                {editingId === summary.id ? (
+                  <>
+                    <ActionButton onClick={() => saveEdit(summary.id)}>
+                      <Check size={18} />
+                    </ActionButton>
+                    <ActionButton onClick={cancelEditing}>
+                      <X size={18} />
+                    </ActionButton>
+                  </>
+                ) : (
+                  <>
+                    <ActionButton onClick={() => startEditing(summary.id, summary.summary)}>
+                      <Edit2 size={18} />
+                    </ActionButton>
+                    <ActionButton onClick={() => deleteSummary(summary.id)}>
+                      <X size={18} />
+                    </ActionButton>
+                  </>
+                )}
+              </ButtonGroup>
+              {editingId === summary.id ? (
+                <EditInput
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                />
+              ) : (
+                <p>{summary.summary}</p>
+              )}
             </SummaryBox>
           ))
         )}

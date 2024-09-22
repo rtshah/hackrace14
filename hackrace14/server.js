@@ -145,6 +145,29 @@ app.delete('/api/summary/:id', async (req, res) => {
   }
 });
 
+app.put('/api/summary/:id', async (req, res) => {
+  const summaryId = req.params.id;
+  const { summary } = req.body;
+
+  if (!summary) {
+    return res.status(400).json({ message: 'Summary content is required' });
+  }
+
+  try {
+    const docRef = adminDb.collection('summaries').doc(summaryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Summary not found' });
+    }
+
+    await docRef.update({ summary });
+    return res.status(200).json({ message: `Summary with ID ${summaryId} has been updated.` });
+  } catch (error) {
+    console.error('Error updating summary:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 // Start the server

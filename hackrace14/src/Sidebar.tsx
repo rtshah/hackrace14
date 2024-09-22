@@ -13,12 +13,20 @@ const SidebarContainer = styled.div<SidebarContainerProps>`
   left: 0;
   height: 100%;
   width: 280px;
-  background-color: #1e2124;
+  background-color: #2d3748;
   color: white;
   z-index: 1000;
   transition: transform 0.3s ease;
   transform: translateX(${props => props.isOpen ? '0' : '-100%'});
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+`;
+const StyledLink = styled(Link)`
+  color: inherit;  /* Inherit the color from the parent NavLink */
+  text-decoration: none;
+
+  &:visited {
+    color: inherit;  /* Prevent visited links from changing color */
+  }
 `;
 
 const SidebarHeader = styled.div`
@@ -116,19 +124,20 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
             <NavItem>
               <NavLink >
                 <Home size={20} />
-                <Link to="/">Home</Link>
+                <StyledLink to="/">Home</StyledLink>
               </NavLink>
             </NavItem>
             <NavItem>
               <NavLink href="#allergy">
                 <Calendar size={20} />
-                Select Date
+                <StyledLink to="/Transcripts">Change Date</StyledLink>
+
               </NavLink>
             </NavItem>
             <NavItem>
               <NavLink href="#air">
                 <List size={20} />
-                <Link to="/Transcripts">View Transcripts</Link>
+                <StyledLink to="/Transcripts">View Transcripts</StyledLink>
 
               </NavLink>
             </NavItem>
