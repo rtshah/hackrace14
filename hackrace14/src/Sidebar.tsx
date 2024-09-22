@@ -141,7 +141,12 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
 
               </NavLink>
             </NavItem>
-
+            <NavItem>
+              <NavLink href="#metrics">
+                <List size={20} />
+                <StyledLink to="/metrics">Metrics</StyledLink>
+              </NavLink>
+            </NavItem>
           </NavList>
         </SidebarNav>
       </SidebarContainer>

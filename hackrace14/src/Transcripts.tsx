@@ -364,6 +364,7 @@ export default function SummaryList() {
                 <Download size={18} /> Download CSV of All Summaries
               </>
             )}
+
           </DownloadButton>
         </ButtonContainer>
         {isLoading ? (
