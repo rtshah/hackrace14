@@ -306,7 +306,7 @@ export default function SummaryList() {
         <SidebarToggle onClick={() => setSidebarOpen(!sidebarOpen)}>
           <Menu />
         </SidebarToggle>
-        <HeaderTitle>Summary List</HeaderTitle>
+        <HeaderTitle>Actions List</HeaderTitle>
         <div style={{ width: '24px' }} />
       </Header>
       <MainContent>

@@ -42,7 +42,7 @@ const MainBox = styled.div`
   border-radius: 10px;
   padding: 30px;
   width: 80%;
-  max-width: 10000px;
+  max-width: 800px;
   margin-top: 70px;
   box-shadow: 10px 10px 10px 2px rgba(0, 0, 0, 1);
   display: flex;
