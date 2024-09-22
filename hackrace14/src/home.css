@@ -1,21 +1,20 @@
 .box {
     background-color: #242526;
     width: 90%;
-    height: 60vh;
+    
     border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     color: white;
-    margin-top: 2vh;
-  }
+    box-shadow: 0 0 50px 5px black;
+}
   
   .home {
     display: flex;
     flex-direction: column;
     align-items: center;
     background-color: #18191A;
-    justify-content: center;
     overflow: hidden; 
     height:100vh;
   }
@@ -31,6 +30,7 @@
     color: white;
     background-color: #242526;
     width: 100%;
+    height:8vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -51,7 +51,7 @@
       border-width: 1px 0 0 0;
       border-style: solid;
       border-color: white;
-      height: 7vh;
+      height: 10px;
       display: flex;
       overflow-x: auto; /* Enables horizontal scrolling */
       overflow-y: hidden; /* Prevents vertical scrolling */
@@ -69,8 +69,8 @@
     }
     
   #Allergy{
-      margin-top: 10vh;
-      height:60%;
+      margin-top: 15vh;
+      height:70%;
   }
   
   .bar-container {
