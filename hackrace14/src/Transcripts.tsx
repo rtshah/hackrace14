@@ -261,7 +261,7 @@ export default function SummaryList() {
     const openaiPrompt = `
       You are given a set of summaries in the format: "1)... 2)... 3)...".
       1) Refers to patient information, 2) Refers to nurses, and 3) Refers to actions.
-
+  
       Ignore summaries that don't contain a specific patient (for example, "1) undetermined" should be ignored).
   
       Here are the summaries:
@@ -273,9 +273,9 @@ export default function SummaryList() {
     `;
   
     try {
-      // Make the request to the OpenAI API
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o", 
+      // First request to OpenAI for the initial CSV generation
+      const firstCompletion = await openai.chat.completions.create({
+        model: "gpt-4",
         messages: [
           { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: openaiPrompt },
@@ -283,10 +283,34 @@ export default function SummaryList() {
       });
   
       // Get the CSV text from the response
-      const csvData = completion.choices[0].message.content.trim();
+      const csvData = firstCompletion.choices[0].message.content.trim();
   
-      // Prepare the CSV file for download
-      const csvContent = 'data:text/csv;charset=utf-8,' + csvData;
+      // Second request: Ask OpenAI to combine rows for the same patient
+      const combinePrompt = `
+        You are given a CSV with columns "Patient", "Nurses", and "Actions".
+        Combine rows where the patient is the same by combining their corresponding "Nurses" and "Actions".
+        Combine the nurses together appropriately, separating each of them by / (forward slash), and concatenate the actions appropriately.
+        Do not leave duplicate nurses or actions in the final output.
+  
+        Here's the CSV:
+        ${csvData}
+  
+        Return the results as CSV format. Do not return any other text. Only return the CSV data.
+      `;
+  
+      const secondCompletion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: combinePrompt },
+        ],
+      });
+  
+      // Get the final CSV with combined rows from the second response
+      const finalCsvData = secondCompletion.choices[0].message.content.trim();
+  
+      // Prepare the final CSV file for download
+      const csvContent = 'data:text/csv;charset=utf-8,' + finalCsvData;
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
       link.setAttribute('href', encodedUri);
