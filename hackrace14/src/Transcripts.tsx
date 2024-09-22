@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Menu, RefreshCw, X, Edit2, Check } from 'lucide-react';
+import { Menu, RefreshCw, X, Edit2, Check, Download } from 'lucide-react';
 import Sidebar from './Sidebar.tsx';
 
 const PageContainer = styled.div`
@@ -83,7 +83,34 @@ const ButtonGroup = styled.div`
   display: flex;
 `;
 
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+`;
+
 const RefreshButton = styled.button`
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #2c5282;
+  }
+
+  svg {
+    margin-right: 8px;
+  }
+`;
+
+const DownloadButton = styled.button`
   background-color: #4a5568;
   color: white;
   border: none;
@@ -215,6 +242,35 @@ export default function SummaryList() {
     }
   };
 
+  const downloadCSV = () => {
+    // Create the CSV header
+    let csvContent = 'data:text/csv;charset=utf-8,Patient,Nurses,Actions\n';
+  
+    // Process each summary and extract relevant data
+    summaries.forEach(summary => {
+      // Match the "1)", "2)", and "3)" pattern using a regular expression
+      const match = summary.summary.match(/1\)([^2]*)2\)([^3]*)3\)(.*)/s);
+  
+      if (match) {
+        const patient = match[1].trim().replace(/\n/g, ' '); // Clean up newlines in "Patient" section
+        const nurses = match[2].trim().replace(/\n/g, ' ');  // Clean up newlines in "Nurses" section
+        const actions = match[3].trim().replace(/\n/g, ' '); // Clean up newlines in "Actions" section
+  
+        // Append the row to CSV content
+        csvContent += `"${patient}","${nurses}","${actions}"\n`;
+      }
+    });
+  
+    // Encode the CSV content and trigger download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'summaries.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };  
+
   return (
     <PageContainer>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -226,10 +282,16 @@ export default function SummaryList() {
         <div style={{ width: '24px' }} />
       </Header>
       <MainContent>
-        <RefreshButton onClick={fetchSummaries}>
-          <RefreshCw size={18} />
-          Refresh Summaries
-        </RefreshButton>
+        <ButtonContainer>
+          <RefreshButton onClick={fetchSummaries}>
+            <RefreshCw size={18} />
+            Refresh Summaries
+          </RefreshButton>
+          <DownloadButton onClick={downloadCSV}>
+            <Download size={18} />
+            Download CSV of All Summaries
+          </DownloadButton>
+        </ButtonContainer>
         {isLoading ? (
           <LoadingMessage>Loading summaries...</LoadingMessage>
         ) : error ? (
