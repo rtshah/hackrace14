@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Menu, RefreshCw, X, Edit2, Check, Download } from 'lucide-react';
+import { Menu, RefreshCw, X, Edit2, Check, Download, Loader } from 'lucide-react';
 import Sidebar from './Sidebar.tsx';
 import OpenAI from "openai";
 
@@ -168,6 +168,7 @@ export default function SummaryList() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false); // New state for download
 
   const fetchSummaries = async () => {
     setIsLoading(true);
@@ -249,6 +250,7 @@ export default function SummaryList() {
   });
 
   const downloadCSV = async () => {
+    setIsDownloading(true); // Set loading to true
     // Check if API key is present
     if (!process.env.REACT_APP_OPENAI_API_KEY) {
       console.error('API key is missing!');
@@ -320,6 +322,8 @@ export default function SummaryList() {
       document.body.removeChild(link);
     } catch (error) {
       console.error('Error generating CSV with OpenAI API:', error);
+    } finally {
+      setIsDownloading(false); // Reset loading state
     }
   };
 
@@ -339,9 +343,16 @@ export default function SummaryList() {
             <RefreshCw size={18} />
             Refresh Summaries
           </RefreshButton>
-          <DownloadButton onClick={downloadCSV}>
-            <Download size={18} />
-            Download CSV of All Summaries
+          <DownloadButton onClick={downloadCSV} disabled={isDownloading}>
+            {isDownloading ? (
+              <>
+                <Loader size={18} className="spinning" /> Generating CSV...
+              </>
+            ) : (
+              <>
+                <Download size={18} /> Download CSV of All Summaries
+              </>
+            )}
           </DownloadButton>
         </ButtonContainer>
         {isLoading ? (
