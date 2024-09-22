@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Menu, RefreshCw, X, Edit2, Check, Download } from 'lucide-react';
+import { Menu, RefreshCw, X, Edit2, Check, Download, Loader } from 'lucide-react';
 import Sidebar from './Sidebar.tsx';
 import DateSelector from './DateSelector.tsx';
+import OpenAI from "openai";
 const PageContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(to bottom right, #1a202c, #2d3748);
@@ -168,7 +169,7 @@ export default function SummaryList() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
-
+  const [isDownloading, setIsDownloading] = useState(false); // New state for download
   const fetchSummaries = async (date: Date) => {
     setIsLoading(true);
     setError(null);
@@ -252,34 +253,88 @@ export default function SummaryList() {
     }
   };
 
-  const downloadCSV = () => {
-    // Create the CSV header
-    let csvContent = 'data:text/csv;charset=utf-8,Patient,Nurses,Actions\n';
+  const openai = new OpenAI({
+    apiKey: process.env.REACT_APP_OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true 
+  });
+
+  const downloadCSV = async () => {
+    setIsDownloading(true); // Set loading to true
+    // Check if API key is present
+    if (!process.env.REACT_APP_OPENAI_API_KEY) {
+      console.error('API key is missing!');
+      return;
+    }
   
-    // Process each summary and extract relevant data
-    summaries.forEach(summary => {
-      // Match the "1)", "2)", and "3)" pattern using a regular expression
-      const match = summary.summary.match(/1\)([^2]*)2\)([^3]*)3\)(.*)/s);
+    // Prepare summaries as a text block to be processed by OpenAI
+    const summaryTexts = summaries.map(summary => summary.summary).join("\n\n");
   
-      if (match) {
-        const patient = match[1].trim().replace(/\n/g, ' '); // Clean up newlines in "Patient" section
-        const nurses = match[2].trim().replace(/\n/g, ' ');  // Clean up newlines in "Nurses" section
-        const actions = match[3].trim().replace(/\n/g, ' '); // Clean up newlines in "Actions" section
+    const openaiPrompt = `
+      You are given a set of summaries in the format: "1)... 2)... 3)...".
+      1) Refers to patient information, 2) Refers to nurses, and 3) Refers to actions.
   
-        // Append the row to CSV content
-        csvContent += `"${patient}","${nurses}","${actions}"\n`;
-      }
-    });
+      Ignore summaries that don't contain a specific patient (for example, "1) undetermined" should be ignored).
   
-    // Encode the CSV content and trigger download
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'summaries.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };  
+      Here are the summaries:
+      ${summaryTexts}
+  
+      Return the results in CSV format with columns "Patient", "Nurses", "Actions".
+      Do not return any other text. Only return the CSV data.
+      If there are multiple nurses, separate them with / (forward slash).
+    `;
+  
+    try {
+      // First request to OpenAI for the initial CSV generation
+      const firstCompletion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: openaiPrompt },
+        ],
+      });
+  
+      // Get the CSV text from the response
+      const csvData = firstCompletion.choices[0].message.content.trim();
+  
+      // Second request: Ask OpenAI to combine rows for the same patient
+      const combinePrompt = `
+        You are given a CSV with columns "Patient", "Nurses", and "Actions".
+        Combine rows where the patient is the same by combining their corresponding "Nurses" and "Actions".
+        Combine the nurses together appropriately, separating each of them by / (forward slash), and concatenate the actions appropriately.
+        Do not leave duplicate nurses or actions in the final output.
+  
+        Here's the CSV:
+        ${csvData}
+  
+        Return the results as CSV format. Do not return any other text. Only return the CSV data.
+      `;
+  
+      const secondCompletion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: combinePrompt },
+        ],
+      });
+  
+      // Get the final CSV with combined rows from the second response
+      const finalCsvData = secondCompletion.choices[0].message.content.trim();
+  
+      // Prepare the final CSV file for download
+      const csvContent = 'data:text/csv;charset=utf-8,' + finalCsvData;
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'summaries.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error generating CSV with OpenAI API:', error);
+    } finally {
+      setIsDownloading(false); // Reset loading state
+    }
+  };
 
   return (
     <PageContainer>
@@ -298,11 +353,17 @@ export default function SummaryList() {
             <RefreshCw size={18} />
             Refresh Summaries
           </RefreshButton>
-      <DateSelector currentDate={currentDate} onDateChange={handleDateChange} />
-
-          <DownloadButton onClick={downloadCSV}>
-            <Download size={18} />
-            Download CSV of All Summaries
+          <DateSelector currentDate={currentDate} onDateChange={handleDateChange} />
+          <DownloadButton onClick={downloadCSV} disabled={isDownloading}>
+            {isDownloading ? (
+              <>
+                <Loader size={18} className="spinning" /> Generating CSV...
+              </>
+            ) : (
+              <>
+                <Download size={18} /> Download CSV of All Summaries
+              </>
+            )}
           </DownloadButton>
         </ButtonContainer>
         {isLoading ? (
